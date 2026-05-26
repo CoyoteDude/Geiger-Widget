@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEIGER • LAB SIM</title>
+<style>
+:root {
+  --bg: #0a0f0c;
+  --panel: #111613;
+  --panel2: #161c18;
+  --border: #1f2a22;
+  --accent: #22ff88;
+  --accent2: #39ff9e;
+  --text: #d1e0d5;
+  --text-dim: #7a8f7f;
+  --danger: #ff5555;
+  --warning: #ffcc33;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.3;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.widget {
+  width: 472px;
+  margin: 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6),
+              inset 0 1px 0 rgba(255,255,255,0.04),
+              inset 0 -1px 0 rgba(0,0,0,0.4);
+  overflow: hidden;
+  position: relative;
+}
+
+.header {
+  background: linear-gradient(#161c18, #111613);
+  padding: 8px 14px 6px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rad-symbol {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  position: relative;
+  flex-shrink: 0;
+}
+.rad-symbol::before,
+.rad-symbol::after {
+  content: '';
+  position: absolute;
+  background: var(--accent);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.rad-symbol::before { width: 7px; height: 2px; }
+.rad-symbol::after { width: 2px; height: 7px; }
+
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #fff;
+}
+.subtitle {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-top: -2px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  padding: 1px;
+}
+
+.metric {
+  background: var(--panel2);
+  padding: 10px 14px 8px;
+  position: relative;
+}
+
+.metric-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+
+.metric-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent2);
+  text-shadow: 
+    0 0 4px rgba(34, 255, 136, 0.5),
+    0 0 12px rgba(34, 255, 136, 0.25);
+  letter-spacing: -1.5px;
+}
+
+.metric-unit {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-left: 4px;
+  letter-spacing: 0.5px;
+}
+
+.metric-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #0d120f;
+  font-size: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.status-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--accent);
+  animation: pulse 1.4s infinite ease-in-out;
+}
+.live-dot.paused {
+  background: #666;
+  box-shadow: none;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.count-led {
+  width: 9px;
+  height: 9px;
+  background: #222;
+  border-radius: 50%;
+  border: 1px solid #333;
+  transition: all 60ms ease;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.6);
+}
+.count-led.on {
+  background: #ff4444;
+  border-color: #ff6666;
+  box-shadow: 0 0 5px #ff4444,
+              inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.isotope-bar {
+  padding: 8px 10px 6px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.isotope-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.iso-btn {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 4px 5px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  position: relative;
+  overflow: hidden;
+}
+.iso-btn:hover {
+  border-color: #334033;
+  background: #1a211c;
+}
+.iso-btn.active {
+  border-color: var(--accent);
+  background: #142018;
+  box-shadow: 0 0 0 1px rgba(34,255,136,0.2);
+}
+.iso-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.iso-symbol {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+}
+.iso-name {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-top: 1px;
+  letter-spacing: 0.3px;
+}
+
+.spectrum-wrap {
+  padding: 8px 10px 4px;
+  background: var(--panel);
+}
+
+.spectrum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding: 0 2px;
+}
+.spectrum-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+}
+.spectrum-btn {
+  font-size: 9px;
+  padding: 1px 7px 2px;
+  background: #1a211c;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.spectrum-btn:hover {
+  background: #223025;
+  border-color: #334033;
+}
+
+#spec-canvas {
+  width: 100%;
+  height: 128px;
+  background: #0a0f0c;
+  border: 1px solid #1a221e;
+  border-radius: 6px;
+  display: block;
+  image-rendering: crisp-edges;
+}
+
+.sparkline-wrap {
+  padding: 0 10px 6px;
+}
+
+#spark-canvas {
+  width: 100%;
+  height: 28px;
+  background: #0a0f0c;
+  border-radius: 3px;
+  display: block;
+}
+
+.controls {
+  padding: 8px 12px 10px;
+  background: #0d120f;
+  border-top: 1px solid var(--border);
+}
+
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.slider-label {
+  font-size: 9px;
+  font-weight: 600;
+  width: 92px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+}
+.slider-label span {
+  color: var(--accent2);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+}
+
+input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 4px;
+  background: #222c25;
+  border-radius: 999px;
+}
+
+.btn-row {
+  display: flex;
+  gap: 6px;
+}
+
+.btn {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: #1a211c;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.1s ease;
+}
+.btn:hover {
+  background: #223025;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn.primary {
+  background: #142018;
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+.btn.primary:hover {
+  background: #1a2a20;
+}
+
+.btn.danger {
+  color: #ff8888;
+}
+
+.footer {
+  padding: 4px 10px 5px;
+  font-size: 8.5px;
+  color: #556655;
+  text-align: center;
+  background: #0a0f0c;
+  border-top: 1px solid #161c18;
+  letter-spacing: 0.2px;
+}
+
+.isotope-info {
+  font-size: 9px;
+  padding: 3px 10px 4px;
+  color: #7a8f7f;
+  display: flex;
+  justify-content: space-between;
+  background: #0d120f;
+  font-family: ui-monospace, monospace;
+}
+
+.disclaimer {
+  font-size: 7.5px;
+  text-align: center;
+  padding: 3px 8px 4px;
+  color: #445544;
+  line-height: 1.2;
+}
+</style>
+</head>
+<body>
+
+<div class="widget" id="widget">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="rad-symbol"></div>
+      <div>
+        <div class="title">GEIGER LAB</div>
+        <div class="subtitle">RADIACODE SIM • v1.2</div>
+      </div>
+    </div>
+    <div style="text-align:right; font-size:9px; line-height:1.1;">
+      <div style="color:#fff; font-weight:600;">LAB SIMULATION</div>
+      <div style="color:#556655;">NOT REAL DATA</div>
+    </div>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">COUNTS PER MINUTE</div>
+      <div style="display:flex; align-items:baseline;">
+        <div id="cpm-value" class="metric-value">1240</div>
+        <div class="metric-unit">CPM</div>
+      </div>
+      <div id="cps-value" class="metric-sub">20.7 CPS</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">DOSE RATE (γ)</div>
+      <div style="display:flex; align-items:baseline;">
+        <div id="dose-value" class="metric-value">2.94</div>
+        <div class="metric-unit">µSv/h</div>
+      </div>
+      <div id="dose-alt" class="metric-sub">0.29 mR/h  •  ~28 nSv/s</div>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar">
+    <div class="status-left">
+      <div id="live-dot" class="live-dot"></div>
+      <span id="status-text" style="font-weight:600; color:#a3b8a8;">LIVE ACQUISITION</span>
+      <span id="elapsed" style="color:#556655; font-family:ui-monospace;">00:00</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <div id="count-led" class="count-led"></div>
+      <span id="current-iso" style="font-weight:700; color:#fff; font-size:10px;">¹³⁷Cs</span>
+    </div>
+  </div>
+
+  <!-- Isotope Selector -->
+  <div class="isotope-bar">
+    <div class="isotope-grid" id="isotope-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- Spectrum -->
+  <div class="spectrum-wrap">
+    <div class="spectrum-header">
+      <div>
+        <span class="spectrum-title">LIVE GAMMA SPECTRUM</span>
+        <span style="color:#445544; font-size:9px; margin-left:6px;">512 ch • 0–1500 keV</span>
+      </div>
+      <button class="spectrum-btn" id="clear-spec-btn">CLEAR</button>
+    </div>
+    <canvas id="spec-canvas" width="452" height="128"></canvas>
+  </div>
+
+  <!-- Sparkline -->
+  <div class="sparkline-wrap">
+    <canvas id="spark-canvas" width="452" height="28"></canvas>
+  </div>
+
+  <!-- Isotope Info -->
+  <div class="isotope-info" id="iso-info">
+    <div><span id="iso-name">Cesium-137</span> • <span id="iso-halflife">30.2 y</span></div>
+    <div id="iso-peaks" style="color:#a3b8a8;">662 keV (85%)</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="slider-row">
+      <div class="slider-label">INTENSITY <span id="intensity-val">1.00</span>×</div>
+      <input type="range" id="intensity-slider" min="0.25" max="4.0" step="0.05" value="1.0">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn primary" id="pause-btn">
+        <span id="pause-icon">⏸</span> <span id="pause-text">PAUSE</span>
+      </button>
+      <button class="btn" id="reset-btn">⟳ RESET</button>
+      <button class="btn" id="sound-btn">♪ SOUND ON</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Simulated lab averages • Typical sealed sources at 20–30 cm bench distance • NaI(Tl) 1.5" model
+  </div>
+  <div class="disclaimer">
+    FOR DEMONSTRATION &amp; EDUCATION ONLY — NOT A REAL MEASUREMENT DEVICE. DO NOT USE FOR SAFETY OR REGULATORY PURPOSES.
+  </div>
+</div>
+
+<script>
+// ============================================
+// GEIGER COUNTER SIMULATOR — SELF CONTAINED
+// ============================================
+
+const ISOTOPES = {
+  cs137: {
+    id: 'cs137', name: 'Cesium-137', symbol: '¹³⁷Cs',
+    halfLife: '30.2 y', peaksText: '662 keV (85%)',
+    avgCPM: 1280, avgUsvh: 2.95,
+    peaks: [{energy: 662, rel: 1.0}],
+    color: '#22ff88'
+  },
+  co60: {
+    id: 'co60', name: 'Cobalt-60', symbol: '⁶⁰Co',
+    halfLife: '5.27 y', peaksText: '1173 + 1332 keV',
+    avgCPM: 710, avgUsvh: 3.85,
+    peaks: [{energy: 1173, rel: 1.0}, {energy: 1332, rel: 0.98}],
+    color: '#60a5fa'
+  },
+  na22: {
+    id: 'na22', name: 'Sodium-22', symbol: '²²Na',
+    halfLife: '2.60 y', peaksText: '511 + 1275 keV',
+    avgCPM: 1540, avgUsvh: 3.25,
+    peaks: [{energy: 511, rel: 1.85}, {energy: 1275, rel: 1.0}],
+    color: '#f472b6'
+  },
+  ba133: {
+    id: 'ba133', name: 'Barium-133', symbol: '¹³³Ba',
+    halfLife: '10.5 y', peaksText: '81, 356 keV (main)',
+    avgCPM: 1890, avgUsvh: 1.75,
+    peaks: [
+      {energy: 81, rel: 0.88},
+      {energy: 276, rel: 0.22},
+      {energy: 303, rel: 0.55},
+      {energy: 356, rel: 1.0},
+      {energy: 384, rel: 0.28}
+    ],
+    color: '#fbbf24'
+  },
+  am241: {
+    id: 'am241', name: 'Americium-241', symbol: '²⁴¹Am',
+    halfLife: '432.6 y', peaksText: '59.5 keV (36%)',
+    avgCPM: 680, avgUsvh: 0.52,
+    peaks: [{energy: 59.5, rel: 1.0}],
+    color: '#c084fc'
+  }
+};
+
+const BINS = 512;
+const MAX_ENERGY = 1500;
+const BIN_WIDTH = MAX_ENERGY / BINS;
+
+// State
+let currentId = 'cs137';
+let intensity = 1.0;
+let isLive = true;
+let soundEnabled = true;
+let elapsedSec = 0;
+let totalCounts = 0;
+let displayedCPM = 1280;
+let displayedDose = 2.95;
+
+let spec = new Float32Array(BINS);           // live display spectrum
+let idealTemplate = new Float32Array(BINS);  // normalized ideal for current isotope
+
+let history = []; // recent dose rate samples for sparkline (max ~90)
+const MAX_HISTORY = 92;
+
+let lastTick = Date.now();
+let elapsedInterval = null;
+let simInterval = null;
+let clickTimeout = null;
+let audioCtx = null;
+
+// DOM refs
+const cpmEl = document.getElementById('cpm-value');
+const cpsEl = document.getElementById('cps-value');
+const doseEl = document.getElementById('dose-value');
+const doseAltEl = document.getElementById('dose-alt');
+const elapsedEl = document.getElementById('elapsed');
+const statusTextEl = document.getElementById('status-text');
+const liveDotEl = document.getElementById('live-dot');
+const countLedEl = document.getElementById('count-led');
+const currentIsoEl = document.getElementById('current-iso');
+const isoNameEl = document.getElementById('iso-name');
+const isoHLifeEl = document.getElementById('iso-halflife');
+const isoPeaksEl = document.getElementById('iso-peaks');
+const specCanvas = document.getElementById('spec-canvas');
+const sparkCanvas = document.getElementById('spark-canvas');
+const intensitySlider = document.getElementById('intensity-slider');
+const intensityVal = document.getElementById('intensity-val');
+const pauseBtn = document.getElementById('pause-btn');
+const pauseIcon = document.getElementById('pause-icon');
+const pauseText = document.getElementById('pause-text');
+const resetBtn = document.getElementById('reset-btn');
+const soundBtn = document.getElementById('sound-btn');
+const clearSpecBtn = document.getElementById('clear-spec-btn');
+const grid = document.getElementById('isotope-grid');
+
+const specCtx = specCanvas.getContext('2d', { alpha: true });
+const sparkCtx = sparkCanvas.getContext('2d', { alpha: true });
+
+// Utility: simple Poisson / Gaussian noise
+function addPoissonNoise(lambda) {
+  if (lambda <= 0) return 0;
+  if (lambda < 12) {
+    let k = 0, p = 1.0;
+    const L = Math.exp(-lambda);
+    while (p > L) {
+      k++;
+      p *= Math.random();
+    }
+    return k - 1;
+  }
+  // Gaussian approximation for larger lambda
+  const std = Math.sqrt(lambda);
+  return Math.max(0, Math.round(lambda + std * (Math.random() + Math.random() + Math.random() - 1.5)));
+}
+
+// Generate ideal spectrum template for current isotope (normalized to ~1.0 total integral)
+function generateTemplate(isotope) {
+  const t = new Float32Array(BINS);
+  let total = 0;
+
+  // Background continuum (very low)
+  for (let i = 0; i < BINS; i++) {
+    const e = i * BIN_WIDTH;
+    let bg = 0.012 + 0.008 * Math.exp(-e / 420);
+    t[i] = bg;
+    total += bg;
+  }
+
+  // Add photopeaks + rough Compton shelf
+  for (const p of isotope.peaks) {
+    const sigma = Math.max(8, p.energy * 0.058 / 2.355); // ~5.8% FWHM typical NaI
+    const amp = p.rel * (p.energy < 200 ? 1.35 : 1.0);   // low-E emphasis
+
+    for (let i = 0; i < BINS; i++) {
+      const e = i * BIN_WIDTH + BIN_WIDTH / 2;
+      // Gaussian photopeak
+      const g = Math.exp(-0.5 * Math.pow((e - p.energy) / sigma, 2)) * amp * 0.92;
+      t[i] += g;
+
+      // Simple Compton continuum shelf (very approximate)
+      if (e < p.energy * 0.92 && e > p.energy * 0.18) {
+        const shelf = amp * 0.035 * (1 - (p.energy - e) / (p.energy * 0.75));
+        t[i] += Math.max(0, shelf);
+      }
+    }
+  }
+
+  // Normalize so max is reasonable and sum represents relative counts
+  let maxV = 0;
+  for (let i = 0; i < BINS; i++) if (t[i] > maxV) maxV = t[i];
+  if (maxV > 0) {
+    const norm = 1.0 / maxV;
+    for (let i = 0; i < BINS; i++) t[i] *= norm;
+  }
+  return t;
+}
+
+// Update the ideal template when isotope or intensity changes
+function updateTemplate() {
+  const iso = ISOTOPES[currentId];
+  idealTemplate = generateTemplate(iso);
+}
+
+// Apply new counts into the live spectrum buffer
+function updateLiveSpectrum(dtSec, currentCPM) {
+  const iso = ISOTOPES[currentId];
+  const scale = (currentCPM / iso.avgCPM) * intensity * dtSec * 0.85;
+
+  for (let i = 0; i < BINS; i++) {
+    const expected = idealTemplate[i] * scale * 1.8;
+
+    // Forget old data (IIR filter) + add new noisy contribution
+    spec[i] = spec[i] * 0.78 + expected * 0.95;
+
+    // Add statistical fluctuation
+    if (expected > 0.02) {
+      const noise = (Math.random() - 0.5) * Math.sqrt(Math.max(0.4, expected)) * 1.7;
+      spec[i] += noise;
+    }
+    if (spec[i] < 0) spec[i] = 0;
+  }
+}
+
+// Draw the main spectrum (Radiacode style)
+function drawSpectrum() {
+  // Use actual displayed size for crisp drawing at any zoom
+  const rectW = specCanvas.clientWidth || specCanvas.width;
+  const rectH = specCanvas.clientHeight || specCanvas.height;
+  if (specCanvas.width !== rectW) specCanvas.width = rectW;
+  if (specCanvas.height !== rectH) specCanvas.height = rectH;
+
+  const w = specCanvas.width;
+  const h = specCanvas.height;
+  const iso = ISOTOPES[currentId];
+
+  specCtx.fillStyle = '#0a0f0c';
+  specCtx.fillRect(0, 0, w, h);
+
+  // Grid
+  specCtx.strokeStyle = '#1a221e';
+  specCtx.lineWidth = 1;
+  // Vertical energy lines
+  const energies = [0, 200, 400, 600, 800, 1000, 1200, 1400];
+  energies.forEach(e => {
+    const x = Math.floor((e / MAX_ENERGY) * w) + 0.5;
+    specCtx.beginPath();
+    specCtx.moveTo(x, 0);
+    specCtx.lineTo(x, h);
+    specCtx.stroke();
+  });
+  // Horizontal
+  for (let y = 0.25; y < 1; y += 0.25) {
+    const yy = Math.floor(h * y) + 0.5;
+    specCtx.beginPath();
+    specCtx.moveTo(0, yy);
+    specCtx.lineTo(w, yy);
+    specCtx.stroke();
+  }
+
+  // Find current max for autoscaling (with floor)
+  let maxVal = 0.8;
+  for (let i = 0; i < BINS; i++) if (spec[i] > maxVal) maxVal = spec[i];
+  maxVal *= 1.08;
+
+  // Draw filled spectrum area
+  const grad = specCtx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(34,255,136,0.75)');
+  grad.addColorStop(0.35, 'rgba(34,255,136,0.35)');
+  grad.addColorStop(1, 'rgba(34,255,136,0.04)');
+
+  specCtx.fillStyle = grad;
+  specCtx.strokeStyle = iso.color;
+  specCtx.lineWidth = 1.6;
+  specCtx.beginPath();
+
+  let first = true;
+  for (let i = 0; i < BINS; i++) {
+    const x = (i / (BINS - 1)) * w;
+    const y = h - (Math.min(spec[i], maxVal) / maxVal) * (h - 6);
+    if (first) {
+      specCtx.moveTo(x, y);
+      first = false;
+    } else {
+      specCtx.lineTo(x, y);
+    }
+  }
+  specCtx.lineTo(w, h);
+  specCtx.lineTo(0, h);
+  specCtx.closePath();
+  specCtx.fill();
+
+  // Stroke the top line
+  specCtx.beginPath();
+  first = true;
+  for (let i = 0; i < BINS; i++) {
+    const x = (i / (BINS - 1)) * w;
+    const y = h - (Math.min(spec[i], maxVal) / maxVal) * (h - 6);
+    if (first) { specCtx.moveTo(x, y); first = false; }
+    else specCtx.lineTo(x, y);
+  }
+  specCtx.stroke();
+
+  // Peak labels
+  specCtx.fillStyle = '#e6ffe6';
+  specCtx.font = '9px ui-monospace, monospace';
+  specCtx.textAlign = 'center';
+
+  for (const p of iso.peaks) {
+    const bin = Math.max(0, Math.min(BINS - 1, Math.floor(p.energy / BIN_WIDTH)));
+    const val = spec[bin];
+    const x = (p.energy / MAX_ENERGY) * w;
+    const y = h - (Math.min(val, maxVal) / maxVal) * (h - 6);
+
+    // Small vertical marker
+    specCtx.strokeStyle = 'rgba(255,255,255,0.7)';
+    specCtx.lineWidth = 1;
+    specCtx.beginPath();
+    specCtx.moveTo(x, y - 3);
+    specCtx.lineTo(x, Math.max(4, y - 14));
+    specCtx.stroke();
+
+    // Label
+    const label = p.energy < 100 ? p.energy.toFixed(0) : p.energy.toFixed(0);
+    specCtx.fillText(label + ' keV', x, Math.max(11, y - 16));
+  }
+
+  // Energy axis labels
+  specCtx.fillStyle = '#556655';
+  specCtx.font = '8px ui-monospace, monospace';
+  specCtx.textAlign = 'center';
+  energies.forEach((e, idx) => {
+    if (idx % 2 === 0) {
+      const x = (e / MAX_ENERGY) * w;
+      specCtx.fillText(e.toString(), x, h - 2);
+    }
+  });
+}
+
+// Sparkline (dose rate history)
+function drawSparkline() {
+  const rectW = sparkCanvas.clientWidth || sparkCanvas.width;
+  const rectH = sparkCanvas.clientHeight || sparkCanvas.height;
+  if (sparkCanvas.width !== rectW) sparkCanvas.width = rectW;
+  if (sparkCanvas.height !== rectH) sparkCanvas.height = rectH;
+
+  const w = sparkCanvas.width;
+  const h = sparkCanvas.height;
+  sparkCtx.fillStyle = '#0a0f0c';
+  sparkCtx.fillRect(0, 0, w, h);
+
+  if (history.length < 2) return;
+
+  const maxD = Math.max(...history, 0.1) * 1.15;
+  const minD = Math.min(...history) * 0.7;
+
+  sparkCtx.strokeStyle = '#39ff9e';
+  sparkCtx.lineWidth = 1.5;
+  sparkCtx.beginPath();
+
+  history.forEach((val, i) => {
+    const x = (i / (MAX_HISTORY - 1)) * w;
+    const norm = (val - minD) / (maxD - minD || 1);
+    const y = h - norm * (h - 4) - 2;
+    if (i === 0) sparkCtx.moveTo(x, y);
+    else sparkCtx.lineTo(x, y);
+  });
+  sparkCtx.stroke();
+
+  // subtle fill under line
+  sparkCtx.lineTo(w, h);
+  sparkCtx.lineTo(0, h);
+  sparkCtx.closePath();
+  sparkCtx.fillStyle = 'rgba(57,255,158,0.12)';
+  sparkCtx.fill();
+}
+
+// Update all numeric displays
+function updateDisplays() {
+  const iso = ISOTOPES[currentId];
+
+  // CPM
+  const cpmRounded = Math.round(displayedCPM);
+  cpmEl.textContent = cpmRounded.toLocaleString();
+  const cps = (displayedCPM / 60);
+  cpsEl.textContent = cps.toFixed(1) + ' CPS';
+
+  // Dose
+  doseEl.textContent = displayedDose.toFixed(2);
+  const mRh = displayedDose * 0.1;
+  const nSv = displayedDose * 1000 / 3600;
+  doseAltEl.textContent = `${mRh.toFixed(2)} mR/h  •  ~${nSv.toFixed(0)} nSv/s`;
+
+  // Current isotope badge
+  currentIsoEl.textContent = iso.symbol;
+  currentIsoEl.style.color = iso.color;
+
+  // Info panel
+  isoNameEl.textContent = iso.name;
+  isoHLifeEl.textContent = iso.halfLife;
+  isoPeaksEl.textContent = iso.peaksText;
+}
+
+// Main simulation tick (runs ~4-5× per second)
+function simulationTick() {
+  if (!isLive) return;
+
+  const now = Date.now();
+  const dt = Math.min((now - lastTick) / 1000, 0.6);
+  lastTick = now;
+
+  const iso = ISOTOPES[currentId];
+  const baseCPM = iso.avgCPM * intensity;
+
+  // Slow drift + statistical variation
+  const drift = Math.sin(now / 17000) * 0.07 + (Math.random() - 0.5) * 0.09;
+  const targetCPM = baseCPM * (1 + drift);
+
+  // Smooth the displayed value (exponential smoothing)
+  displayedCPM = displayedCPM * 0.68 + targetCPM * 0.32;
+
+  // Dose follows with slight independent jitter (energy response variation)
+  const doseTarget = (displayedCPM / iso.avgCPM) * iso.avgUsvh * (0.96 + Math.random() * 0.08);
+  displayedDose = displayedDose * 0.71 + doseTarget * 0.29;
+
+  // Accumulate "total counts"
+  const countsThisTick = (displayedCPM / 60) * dt;
+  totalCounts += countsThisTick;
+
+  // Feed the live spectrum
+  updateLiveSpectrum(dt, displayedCPM);
+
+  // Occasionally trigger visual count LED (probabilistic)
+  if (Math.random() < (displayedCPM / 1400) * 0.65) {
+    flashCountLED();
+  }
+
+  // Update history every ~1.6 seconds
+  if (Math.random() < 0.22) {
+    history.push(displayedDose);
+    if (history.length > MAX_HISTORY) history.shift();
+    drawSparkline();
+  }
+
+  // Draw everything
+  drawSpectrum();
+  updateDisplays();
+
+  // Schedule next click if sound on
+  if (soundEnabled) scheduleNextClick();
+}
+
+// Visual flash for detected count
+function flashCountLED() {
+  countLedEl.classList.add('on');
+  setTimeout(() => countLedEl.classList.remove('on'), 70);
+}
+
+// Web Audio Geiger click (classic short tick)
+function playGeigerClick() {
+  if (!soundEnabled || !isLive) return;
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const t0 = audioCtx.currentTime;
+
+    // Short filtered noise burst (very convincing geiger tick)
+    const noiseDur = 0.016 + Math.random() * 0.007;
+    const bufferSize = Math.floor(audioCtx.sampleRate * noiseDur);
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noiseSrc = audioCtx.createBufferSource();
+    noiseSrc.buffer = buffer;
+
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 920 + Math.random() * 280;
+
+    const hp = audioCtx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 420;
+
+    const gain = audioCtx.createGain();
+    const volume = 0.22 + Math.random() * 0.12;
+
+    gain.gain.value = volume;
+    gain.gain.setValueAtTime(volume, t0);
+    gain.gain.linearRampToValueAtTime(0.0001, t0 + noiseDur + 0.012);
+
+    noiseSrc.connect(hp);
+    hp.connect(lp);
+    lp.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    noiseSrc.start(t0);
+  } catch (e) {
+    // Audio blocked or failed — silently ignore
+  }
+}
+
+// Schedule clicks at roughly the current rate (with natural jitter)
+function scheduleNextClick() {
+  if (clickTimeout) clearTimeout(clickTimeout);
+  if (!isLive || !soundEnabled) return;
+
+  const rate = Math.max(18, displayedCPM);
+  let interval = (60000 / rate) * (0.55 + Math.random() * 1.05);
+
+  // Occasionally bunch clicks (realistic)
+  if (Math.random() < 0.11) interval *= 0.28;
+
+  clickTimeout = setTimeout(() => {
+    if (isLive && soundEnabled) {
+      playGeigerClick();
+      scheduleNextClick();
+    }
+  }, Math.max(18, interval));
+}
+
+// Elapsed time updater
+function startElapsedTimer() {
+  if (elapsedInterval) clearInterval(elapsedInterval);
+  elapsedInterval = setInterval(() => {
+    if (!isLive) return;
+    elapsedSec++;
+    const m = Math.floor(elapsedSec / 60);
+    const s = elapsedSec % 60;
+    elapsedEl.textContent = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+// Set new isotope
+function setIsotope(id) {
+  if (!ISOTOPES[id] || id === currentId) return;
+
+  currentId = id;
+  const iso = ISOTOPES[id];
+
+  // Reset spectrum buffer for clean new acquisition look
+  spec.fill(0);
+
+  updateTemplate();
+
+  // Seed the spectrum a little so it isn't completely empty on switch
+  for (let i = 0; i < 3; i++) {
+    updateLiveSpectrum(0.9, iso.avgCPM * intensity);
+  }
+
+  // Jump displayed values toward new averages quickly
+  displayedCPM = iso.avgCPM * intensity * (0.88 + Math.random() * 0.24);
+  displayedDose = iso.avgUsvh * intensity * (0.9 + Math.random() * 0.2);
+
+  // Clear some history for visual reset
+  history = history.slice(-6);
+
+  // Update UI
+  document.querySelectorAll('.iso-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.id === id);
+  });
+
+  drawSpectrum();
+  drawSparkline();
+  updateDisplays();
+
+  // Persist
+  try { localStorage.setItem('geiger_last_iso', id); } catch (e) {}
+}
+
+// Set intensity (from slider)
+function setIntensity(val) {
+  intensity = parseFloat(val);
+  intensityVal.textContent = intensity.toFixed(2);
+
+  const iso = ISOTOPES[currentId];
+  // Immediately affect rates
+  const targetCPM = iso.avgCPM * intensity;
+  displayedCPM = displayedCPM * 0.4 + targetCPM * 0.6;
+  displayedDose = (displayedCPM / iso.avgCPM) * iso.avgUsvh * (0.95 + Math.random()*0.1);
+
+  updateDisplays();
+}
+
+// Toggle live / paused
+function togglePause() {
+  isLive = !isLive;
+
+  if (isLive) {
+    liveDotEl.classList.remove('paused');
+    statusTextEl.textContent = 'LIVE ACQUISITION';
+    pauseIcon.textContent = '⏸';
+    pauseText.textContent = 'PAUSE';
+    lastTick = Date.now();
+    if (!simInterval) {
+      simInterval = setInterval(simulationTick, 235);
+    }
+    startElapsedTimer();
+    if (soundEnabled) scheduleNextClick();
+  } else {
+    liveDotEl.classList.add('paused');
+    statusTextEl.textContent = 'PAUSED';
+    pauseIcon.textContent = '▶︎';
+    pauseText.textContent = 'RESUME';
+    if (clickTimeout) clearTimeout(clickTimeout);
+  }
+}
+
+// Full reset
+function fullReset() {
+  const iso = ISOTOPES[currentId];
+  spec.fill(0);
+  history = [];
+  elapsedSec = 0;
+  totalCounts = 0;
+  elapsedEl.textContent = '00:00';
+
+  displayedCPM = iso.avgCPM * intensity * (0.9 + Math.random() * 0.2);
+  displayedDose = iso.avgUsvh * intensity;
+
+  // Seed fresh spectrum
+  for (let k = 0; k < 4; k++) updateLiveSpectrum(0.7, displayedCPM);
+
+  drawSpectrum();
+  drawSparkline();
+  updateDisplays();
+}
+
+// Build isotope buttons
+function buildIsotopeButtons() {
+  grid.innerHTML = '';
+  Object.keys(ISOTOPES).forEach(id => {
+    const iso = ISOTOPES[id];
+    const btn = document.createElement('div');
+    btn.className = 'iso-btn' + (id === currentId ? ' active' : '');
+    btn.dataset.id = id;
+    btn.innerHTML = `
+      <div class="iso-symbol" style="color:${iso.color}">${iso.symbol}</div>
+      <div class="iso-name">${iso.name.split('-')[0]}</div>
+    `;
+    btn.onclick = () => setIsotope(id);
+    grid.appendChild(btn);
+  });
+}
+
+// Load persisted state
+function loadPersisted() {
+  try {
+    const savedIso = localStorage.getItem('geiger_last_iso');
+    if (savedIso && ISOTOPES[savedIso]) {
+      currentId = savedIso;
+    }
+    const savedInt = localStorage.getItem('geiger_intensity');
+    if (savedInt) {
+      intensity = parseFloat(savedInt);
+      intensitySlider.value = intensity;
+      intensityVal.textContent = intensity.toFixed(2);
+    }
+  } catch (e) {}
+}
+
+// Save intensity when changed
+function bindControls() {
+  intensitySlider.oninput = () => {
+    setIntensity(intensitySlider.value);
+    try { localStorage.setItem('geiger_intensity', intensity); } catch (e) {}
+    // Immediate visual feedback on spectrum
+    if (isLive) {
+      for (let k = 0; k < 2; k++) updateLiveSpectrum(0.4, displayedCPM);
+      drawSpectrum();
+    }
+  };
+
+  pauseBtn.onclick = togglePause;
+  resetBtn.onclick = fullReset;
+  clearSpecBtn.onclick = () => {
+    spec.fill(0);
+    drawSpectrum();
+  };
+
+  soundBtn.onclick = () => {
+    soundEnabled = !soundEnabled;
+    soundBtn.textContent = soundEnabled ? '♪ SOUND ON' : '♪ SOUND OFF';
+    if (soundEnabled && isLive) scheduleNextClick();
+    else if (clickTimeout) clearTimeout(clickTimeout);
+  };
+
+  // Keyboard shortcuts (nice for widget feel)
+  document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === ' ' && document.activeElement.tagName !== 'INPUT') {
+      e.preventDefault();
+      togglePause();
+    }
+    if (e.key.toLowerCase() === 'r') fullReset();
+    if (e.key === 'Escape' && !isLive) togglePause();
+  });
+
+  // Click anywhere on widget to "arm" audio (browser policy)
+  document.getElementById('widget').addEventListener('click', () => {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
+    }
+  }, { once: true });
+}
+
+// Boot everything
+function init() {
+  loadPersisted();
+  buildIsotopeButtons();
+
+  // Initial template + spectrum seed
+  updateTemplate();
+  spec.fill(0);
+  for (let k = 0; k < 5; k++) {
+    updateLiveSpectrum(0.65, ISOTOPES[currentId].avgCPM * intensity);
+  }
+
+  displayedCPM = ISOTOPES[currentId].avgCPM * intensity;
+  displayedDose = ISOTOPES[currentId].avgUsvh * intensity;
+
+  // First draws
+  drawSpectrum();
+  drawSparkline();
+  updateDisplays();
+
+  // Seed a little history
+  for (let i = 0; i < 12; i++) {
+    history.push(displayedDose * (0.92 + Math.random() * 0.16));
+  }
+  drawSparkline();
+
+  // Start simulation loop
+  lastTick = Date.now();
+  simInterval = setInterval(simulationTick, 235);
+  startElapsedTimer();
+
+  // Initial click scheduler
+  setTimeout(() => {
+    if (soundEnabled && isLive) scheduleNextClick();
+  }, 420);
+
+  bindControls();
+
+  // Make sure active button is styled
+  setTimeout(() => {
+    document.querySelectorAll('.iso-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.id === currentId);
+    });
+  }, 10);
+
+  // Gentle first intensity label
+  intensityVal.textContent = intensity.toFixed(2);
+
+  // Easter egg: double-click spectrum to "boost" acquisition
+  specCanvas.addEventListener('dblclick', () => {
+    for (let i = 0; i < 3; i++) updateLiveSpectrum(1.6, displayedCPM * 1.8);
+    drawSpectrum();
+  });
+
+  // Helpful console note
+  console.log('%c[Geiger Lab] Widget ready. Space = pause/resume, R = reset. Fully self-contained.', 'color:#445544');
+}
+
+init();
+</script>
+</body>
+</html>

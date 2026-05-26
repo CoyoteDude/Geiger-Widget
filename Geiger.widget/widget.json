@@ -1,0 +1,9 @@
+{
+  "name": "Geiger Lab",
+  "description": "Interactive Geiger counter simulation with real-time gamma spectrum (Radiacode style), 5 common lab isotopes, live CPM and µSv/h readings. Fully interactive on your desktop.",
+  "author": "Grok Project",
+  "version": "1.0.0",
+  "website": "https://github.com/yourname/geiger-counter-widget",
+  "refreshFrequency": 1800000,
+  "sizes": ["small", "medium", "large"]
+}
